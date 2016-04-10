@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>NPS - minimal benchmark sets</title>
+<html>
+  <head>
+    <style>
+      rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width:2px;   
+      }
+
+      text.mono {
+        font-size: 9pt;
+        font-family: Consolas, courier;
+        fill: #aaa;
+      }
+
+      text.axis-workweek {
+        fill: #000;
+      }
+
+      text.axis-worktime {
+        fill: #000;
+      }
+    </style>
+    <script src="http://d3js.org/d3.v3.js"></script>
+  </head>
+  <body>
+  <header>
+  <aside>Recommender system for improving Net Promoter Score (customer loyalty) of a company providing repair services</aside>
+  <!--<a href="../" rel="author">Katarzyna</a>-->
+</header>
+
+<h1><i>Decision Reducts</i> for NPS</h1>
+
+<p>This matrix diagram visualizes minimal sets of benchmarks (reducts) that determine NPS (per chosen client's dataset).
+
+<p>Each colored cell represents benchmark that was found reduct for the given year and client; darker cells indicate reducts that occurred more frequently.
+
+<p>Use the buttons to choose a client and explore the data.
+
+<p>Built with <a href="http://d3js.org/">d3.js</a>.
+</aside>
+    <div id="chart"></div>
+    <div id="dataset-picker">
+    </div>
+    <script type="text/javascript">
+      var margin = { top: 50, right: 0, bottom: 100, left: 50 },
+          width = 960 - margin.left - margin.right,
+          height = 430 - margin.top - margin.bottom,
+          gridSize = Math.floor(width / 17),
+          legendElementWidth = gridSize*2,
+          buckets = 9,
+          colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
+          //colors = colorbrewer.YlGnBu[4]
+		  years = ["2011", "2012", "2013", "2014", "2015"],
+		  benchmarks = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15", "B16"];
+          datasets = ["ALTO.txt","BLAN.txt","BUTL.txt", "CASH.txt"];
+		  //datasets = ["Client2.tsv"];
+
+      var svg = d3.select("#chart").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var yearLabels = svg.selectAll(".yearLabel")
+          .data(years)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x", 0)
+            .attr("y", function (d, i) { return i * gridSize; })
+            .style("text-anchor", "end")
+            .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
+            .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "yearLabel mono axis axis-workweek" : "yearLabel mono axis"); });
+
+      var timeLabels = svg.selectAll(".timeLabel")
+          .data(benchmarks)
+          .enter().append("text")
+            .text(function(d) { return d; })
+            .attr("x", function(d, i) { return i * gridSize; })
+            .attr("y", 0)
+            .style("text-anchor", "middle")
+            .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+            .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
+
+      var heatmapChart = function(tsvFile) {
+        d3.tsv(tsvFile,
+        function(d) {
+          return {
+            year: +d.year,
+            benchmark: +d.benchmark,
+            value: +d.value*10
+          };
+        },
+        function(error, data) {
+          var colorScale = d3.scale.quantile()
+              .domain([0, buckets - 1, d3.max(data, function (d) { return d.value; })])
+              .range(colors);
+
+          var cards = svg.selectAll(".benchmark")
+              .data(data, function(d) {return d.year+':'+d.benchmark;});
+
+          cards.append("title");
+
+          cards.enter().append("rect")
+              .attr("x", function(d) { return (d.benchmark - 1) * gridSize; })
+              .attr("y", function(d) { return (d.year - 1) * gridSize; })
+              .attr("rx", 4)
+              .attr("ry", 4)
+              .attr("class", "benchmark bordered")
+              .attr("width", gridSize)
+              .attr("height", gridSize)
+              .style("fill", colors[0]);
+
+          cards.transition().duration(1000)
+              .style("fill", function(d) { return colorScale(d.value); });
+
+          cards.select("title").text(function(d) { return d.value; });
+          
+          cards.exit().remove();
+
+          var legend = svg.selectAll(".legend")
+              .data([0].concat(colorScale.quantiles()), function(d) { return d; });
+
+          legend.enter().append("g")
+              .attr("class", "legend");
+
+          legend.append("rect")
+            .attr("x", function(d, i) { return legendElementWidth * i; })
+            .attr("y", height)
+            .attr("width", legendElementWidth)
+            .attr("height", gridSize / 2)
+            .style("fill", function(d, i) { return colors[i]; });
+
+          legend.append("text")
+            .attr("class", "mono")
+            .text(function(d) { return "= " + Math.round(d); })
+            .attr("x", function(d, i) { return legendElementWidth * i; })
+            .attr("y", height + gridSize);
+
+          legend.exit().remove();
+
+        });  
+      };
+
+      heatmapChart(datasets[0]);
+      
+      var datasetpicker = d3.select("#dataset-picker").selectAll(".dataset-button")
+        .data(datasets);
+
+      datasetpicker.enter()
+        .append("input")
+        .attr("value", function(d){ return "" + d })
+        .attr("type", "button")
+        .attr("class", "dataset-button")
+        .on("click", function(d) {
+          heatmapChart(d);
+        });
+    </script>
+	<p>Legend:
+<table>
+  <tr>
+    <td>B1</td>
+    <td>Benchmark: All - Dealer Communication</td> 
+	<td>B9</td>
+    <td>Benchmark: Service - Repair Completed Correctly</td> 
+</tr>
+<tr>
+    <td>B2</td>
+    <td>Benchmark: All - Ease of Contact</td> 
+	<td>B10</td>
+    <td>Benchmark: Service - Repair Completed Timely</td> 
+</tr>
+<tr>
+    <td>B3</td>
+    <td>Benchmark: All - Invoice Clear and Understandable</td> 
+	<td>B11</td>
+    <td>Benchmark: Service - Technician Communication</td> 
+</tr>
+<tr>
+    <td>B4</td>
+    <td>Benchmark: All - Likelihood to be Repeat Customer</td> 
+	<td>B12</td>
+    <td>Benchmark: Service - Timeliness of Invoice</td>
+</tr>
+<tr>
+    <td>B5</td>
+    <td>Benchmark: All - Overall Satisfaction</td> 
+	<td>B13</td>
+    <td>Benchmark: Service-Repair Completed When Promised</td> 
+</tr>
+<tr>
+    <td>B6</td>
+    <td>Benchmark: Referral Behavior</td> 
+	<td>B14</td>
+    <td>Benchmark: Service-Tech Arrived When Promised</td> 
+</tr>
+<tr>
+    <td>B7</td>
+    <td>Benchmark: Service - Appointment Availability</td> 
+	<td>B15</td>
+    <td>Benchmark: Service-Tech Equipped to do Job</td> 
+</tr>
+<tr>
+    <td>B8</td>
+    <td>Benchmark: Service - Final Invoice Matched Expectation</td> 
+	<td>B16</td>
+    <td>Benchmark: Service-Tech Promised in Expected Timeframe</td>
+
+
+</table>
+  </body>
+</html>
