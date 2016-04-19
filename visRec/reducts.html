@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <meta charset="utf-8">
 <title>NPS - minimal benchmark sets</title>
@@ -23,45 +22,114 @@
       text.axis-important {
         fill: #000;
       }
+	  
+	 .chart rect {
+		fill: maroon;
+		}
+
+	.container1 {
+	float: left;
+	}
+	.container2 {
+	float: left;
+	}
+	.container3 {
+	float: left,top;
+	}
+	.picker1 {
+	float: bottom;
+	}
+	.picker2 {
+	float: top;
+	}
+	
+	.axis path, .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+	}
+	.axis text {
+		font-family: sans-serif;
+		font-size: 11px;
+	}
+	#tooltip {
+		position: absolute;
+		text-align: center;
+		width: 40px;
+		height: auto;
+		padding: 10px;
+		background-color: white;
+		-webkit-border-radius: 10px;
+		-moz-border-radius: 10px;
+		border-radius: 10px;
+		-webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+		-moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+		box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+		pointer-events: none;
+	}
+	#tooltip.hidden {
+		display: none;
+	}
+	#tooltip p {
+		margin: 0;
+		font-family: sans-serif;
+		font-size: 16px;
+		line-height: 20px;
+	}
+	  
     </style>
     <script src="http://d3js.org/d3.v3.js"></script>
   </head>
   <body>
-  <header>
-  <aside>Recommender system for improving Net Promoter Score (customer loyalty) of a company providing repair services</aside>
-  <!--<a href="../" rel="author">Katarzyna</a>-->
+  <header>Recommender system for improving Net Promoter Score (customer loyalty) of a company providing repair services
 </header>
 
 <h1><i>Decision Reducts</i> for NPS</h1>
 
-<p>This matrix diagram visualizes minimal sets of benchmarks (reducts) that determine NPS (per chosen client's dataset).
+<p>This matrix diagram visualizes minimal sets of benchmarks (reducts) that determine NPS (per chosen company's dataset in a given year).
+<br> The row charts represent NPS score per year for this company and Detractors/Passive/Promoters distribution. 
 
-<p>Each colored cell represents benchmark that was found reduct for the given year and client; darker cells indicate reducts that occurred more frequently.
 
-<p>Use the buttons to choose a client and explore the data.
 
+<p>Each colored cell in the matrix represents benchmark that was found in a reduct for the given year and client.
+
+<br> The color scale corresponds to occurance percentage: darker cells indicate benchmarks 
+that belong to more reducts than benchmarks represented by lighter cells. 
+<br>So, the darker the cell, the more important the associated benchmark is in customers eyes.
+<br> The average benchmark scores per year are visible after clicking the company button and moving the mouse pointer over the cell. 
+
+<br>Use the buttons to choose a client and explore the data. The empty row/bars mean there was no corresponding data for the given client in that year.
 <p>Built with <a href="http://d3js.org/">d3.js</a>.
+
 </aside>
-    <div id="chart"></div>
-    <div id="dataset-picker1">
-	<div id="dataset-picker2">
-    </div>
+    <div class="container1" id="chart1"></div>
+	<div class="container2" id="chart2"></div>
+	<div class="container3" id="chart3">
+	<div id="tooltip" class="hidden">
+    <p><span id="value">100</span>
+    </p></div>
+	</div>
+    <div class="picker1" id="dataset-picker1"></div>
+	<div class="picker2" id="dataset-picker2"></div>
+	
+
+    
     <script type="text/javascript">
-      var margin = { top: 50, right: 0, bottom: 100, left: 50 },
-          width = 960 - margin.left - margin.right,
-          height = 430 - margin.top - margin.bottom,
-          gridSize = Math.floor(width / 18),
+      var margin = { top: 50, right: 0, bottom: 50, left: 50 },
+          width = 760 - margin.left - margin.right,
+          height = 380 - margin.top - margin.bottom,
+          gridSize = Math.floor(width / 16),
           legendElementWidth = gridSize *1.5,
           buckets = 9,
           colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
           //colors = colorbrewer.YlGnBu[4]
 		  years = ["2011", "2012", "2013", "2014", "2015"],
-		  benchmarks = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15", "B16"];
-          datasets = ["ALTO","BLAN","BUTL","CASH", "CLEV", "EMPI", "FINN", "FOLE", "GREG", "HARN", "HAWT", "HEWI", "HOLT", "HCAL", 
-		  "JOHN", "MUST", "OHIO", "PUCK", "RANS", "THOM", "WAGN", "WALK", "WARR", "WAYN", "WHEE", "WYOM", "YANC" ];
-		  //datasets = ["Client2.tsv"];
+		  benchmarks = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15", "B16", "NPS"];
+          datasets = ["All", "Client1","Client2","Client3","Client4","Client5", "Client6", "Client7","Client8", "Client9", "Client10", "Client11", "Client12", "Client13", "Client14", "Client15", "Client16", 
+		  "Client17", "Client18", "Client19", "Client20", "Client21", "Client22", "Client23", "Client24","Client25", "Client26", "Client27", "Client28", "Client29", "Client30", "Client31","Client32", "Client33", "Client34",
+		  "Client35","Client36","Client37","Client38"];
 
-      var svg = d3.select("#chart").append("svg")
+      var svg = d3.select("#chart1").append("svg")
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
           .append("g")
@@ -77,7 +145,8 @@
             .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
             .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "yearLabel mono axis axis-year" : "yearLabel mono axis"); });
 
-      var benchmarkLabels = svg.selectAll(".benchmarkLabel")
+      
+	  var benchmarkLabels = svg.selectAll(".benchmarkLabel")
           .data(benchmarks)
           .enter().append("text")
             .text(function(d) { return d; })
@@ -85,21 +154,40 @@
             .attr("y", 0)
             .style("text-anchor", "middle")
             .attr("transform", "translate(" + gridSize / 2 + ", -6)")
-            .attr("class", function(d, i) { return ((i >= 0 && i <= 17) ? "benchmarkLabel mono axis axis-important" : "benchmarkLabel mono axis"); });
-
+            .attr("class", function(d, i) { return ((i >= 0 && i <= 15) ? "benchmarkLabel mono axis axis-important" : "benchmarkLabel mono axis"); });
+			
+	
       var heatmapChart = function(tsvFile) {
-        d3.tsv(tsvFile,
+        d3.tsv("/data/ben/"+tsvFile+".txt",
         function(d) {
           return {
             year: +d.year,
             benchmark: +d.benchmark,
-            value: +d.value*10
+            value: +d.value,
+			avg: +d.avg,
           };
         },
         function(error, data) {
-          var colorScale = d3.scale.quantile()
-              .domain([0, buckets - 1, d3.max(data, function (d) { return d.value; })])
+		
+		svg.select("#current").remove();
+
+		svg.append("text")
+				.attr("id", "current")
+				.text(tsvFile)
+				.attr("font-size", "20")
+				.attr("font-family", "Consolas, courier")
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("transform", "translate(-30 , -25)");
+				
+		
+          var colorScale = d3.scale.quantize()
+              .domain([0, d3.max(data, function (d) { return d.value; })])
               .range(colors);
+			  
+		var dom = colorScale.domain(),
+			l = (dom[1] - dom[0])/colorScale.range().length,
+			breaks = d3.range(0, colorScale.range().length).map(function(i) { return i * l; });
 
           var cards = svg.selectAll(".benchmark")
               .data(data, function(d) {return d.year+':'+d.benchmark;});
@@ -119,38 +207,264 @@
           cards.transition().duration(1000)
               .style("fill", function(d) { return colorScale(d.value); });
 
-          cards.select("title").text(function(d) { return d.value; });
+          cards.select("title").text(function(d) { return "Avg: "+ d.avg; });
           
           cards.exit().remove();
 
           var legend = svg.selectAll(".legend")
-              .data([0].concat(colorScale.quantiles()), function(d) { return d; });
-
-          legend.enter().append("g")
-              .attr("class", "legend");
+			.data(breaks, function(d) { return d; });
+			
+		  legend.enter().append("g")
+             .attr("class", "legend");
 
           legend.append("rect")
             .attr("x", function(d, i) { return legendElementWidth * i; })
-            .attr("y", height)
+            .attr("y", height-30)
             .attr("width", legendElementWidth)
             .attr("height", gridSize / 2)
             .style("fill", function(d, i) { return colors[i]; });
 
           legend.append("text")
             .attr("class", "mono")
-            .text(function(d) { return "= " + (d/10).toFixed(1); })
+            .text(function(d) { return "= " + (Math.round(d*100)/100); })
             .attr("x", function(d, i) { return legendElementWidth * i; })
-            .attr("y", height + gridSize);
+            .attr("y", height-30 + gridSize);
 
           legend.exit().remove();
 
         });  
       };
 
-      heatmapChart(datasets[0]+".txt");
-      
-      var datasetpicker1 = d3.select("#dataset-picker1").selectAll(".dataset-button1")
-        .data(datasets.slice(14,28));
+	heatmapChart(datasets[0]);
+	
+	var width = 170,
+		barHeight = gridSize;
+
+	var rowChart = function(tsvFile)  {
+        d3.tsv("/data/nps/"+tsvFile+".txt",
+        function(d) {
+          return {
+            value: +d.value
+          };
+        },
+        function(error, data)  {
+		
+		d3.select("#chartRow").remove();
+	
+		
+		var chart = d3.select("#chart2").append("svg")
+				.attr("id", "chartRow")
+				.attr("class", "chart")
+				.attr("width", width)
+				.attr("height", 380)
+				.append("g")
+				.attr("transform", "translate(0," + margin.top + ")")
+				;	
+		
+			
+		chart.append("text")
+            .text("Net Promoter Score")
+            .style("text-anchor", "right")
+			.attr("fill", "#000")
+		    .attr("font-family", "Consolas, courier")
+			.attr("font-size", "10pt")
+			.attr("transform", "translate(6, -6)")
+			;	
+		
+		var x = d3.scale.linear()
+		//.domain([50, d3.max(data, function(d) { return d.value; })])
+		.domain([40, 90])
+		.range([0, width]);
+
+				
+		var bar = chart.selectAll("g")
+			.data(data)
+			.enter().append("g")
+			.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; })
+			;
+				
+			bar.append("rect")
+				.attr("class", "bar")
+				.attr("width", function(d) { return x(d.value); })
+				.attr("height", barHeight - 1);
+					//.attr("id", "chartRow");
+
+			bar.append("text")
+				.attr("fill", "white")
+		        .attr("font-family", "sans-serif")
+				.attr("font-size", "11px")
+				.attr("text-anchor", "end")
+				 .attr("x", function(d) { return x(d.value) - 3; })
+				 .attr("y", barHeight / 2)
+				 .attr("dy", ".35em")
+				 .text(function(d) { return d.value; });
+			
+			
+				//bar.select(".bar").transition()
+				  //.duration(300)
+				  //.attr("width", function(d) { return x(d.value); })	
+		});  
+		};
+	var dataset;	
+	var rowChartSt = function(tsvFile)  {
+        d3.json("/data/dpp/"+tsvFile+".json",
+        function(error,json)  {
+		console.log(json);
+		dataset = json;
+		d3.select("#chartRowSt").remove();
+	
+		
+	var	height = gridSize*5,
+	
+	 series = dataset.map(function (d) {
+        return d.name;
+    }),
+    dataset = dataset.map(function (d) {
+        return d.data.map(function (o, i) {
+            // Structure it so that your numeric
+            // axis (the stacked amount) is y
+            return {
+                y: o.perc,
+                x: o.year
+            };
+        });
+    }),
+    stack = d3.layout.stack();
+		
+	stack(dataset);		
+	
+	var dataset = dataset.map(function (group) {
+		return group.map(function (d) {
+        // Invert the x and y values, and y0 becomes x0
+        return {
+            x: d.y,
+            y: d.x,
+            x0: d.y0
+        };
+		});
+	}),
+
+	chart3 = d3.select("#chart3").append("svg")
+				.attr("id", "chartRowSt")
+				.attr("class", "chart3")
+				.attr("width", width)
+				.attr("height", 380)
+				.append("g")
+				.attr("transform", "translate(0," + margin.top + ")"),
+				
+					
+	xMax = d3.max(dataset, function (group) {
+        return d3.max(group, function (d) {
+            return d.x + d.x0;
+        });
+		}),	
+	
+	xScale = d3.scale.linear()
+        .domain([0, 50])
+        .range([0, width]),
+    years = dataset[0].map(function (d) {
+        return d.y;
+    }),
+    _ = console.log(years),
+    yScale = d3.scale.ordinal()
+        .domain(years)
+        .rangeRoundBands([0, height], .1),
+    xAxis = d3.svg.axis()
+        .scale(xScale)
+        .orient('bottom'),
+    yAxis = d3.svg.axis()
+        .scale(yScale)
+        .orient('left'),
+    colours = d3.scale.category10(),
+	colourscale = d3.scale.ordinal().range(["#FF0000", "yellow","#009933","#081d58"]),
+    groups = chart3.selectAll('g')
+        .data(dataset)
+        .enter()
+        .append('g')
+        .style('fill', function (d, i) {
+        return colourscale(i);
+    }),
+    rects = groups.selectAll('rect')
+        .data(function (d) {
+        return d;
+    })
+        .enter()
+        .append('rect')
+        .attr('x', function (d) {
+		return xScale(d.x0);
+    })
+        .attr('y', function (d, i) {
+        return yScale(d.y);
+    })
+        .attr('height', function (d) {
+        return yScale.rangeBand();
+    })
+        .attr('width', function (d) {
+        return xScale(d.x); 
+    })
+        .on('mouseover', function (d) {
+        var xPos = parseFloat(d3.select(this).attr('x')) / 2 + width / 2;
+        var yPos = parseFloat(d3.select(this).attr('y')) + yScale.rangeBand() / 2;	
+	 
+	 d3.select('#tooltip')
+            .style('left', xPos + 760+170 + 'px')
+            .style('top', yPos + 350 +'px')
+            .select('#value')
+            .text(d.x+"%");
+
+        d3.select('#tooltip').classed('hidden', false);
+    })
+        .on('mouseout', function () {
+        d3.select('#tooltip').classed('hidden', true);
+    })	
+/*				
+		chart3.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis);
+
+	chart3.append('g')
+    .attr('class', 'axis')
+    .call(yAxis);
+
+	chart3.append('rect')
+    .attr('fill', 'yellow')
+	.attr('transform', 'translate(0,' + height + ')')
+    .attr('width', 160)
+    .attr('height', 30 * dataset.length)
+    .attr('x', width + margins.left)
+    .attr('y', 0);
+*/
+
+	chart3.append("text")
+            .text("Detract/Passive/Promot")
+            .style("text-anchor", "right")
+			.attr("fill", "#000")
+		    .attr("font-family", "Consolas, courier")
+			.attr("font-size", "10pt")
+			.attr("transform", "translate(6, -6)")
+			;	
+	series.forEach(function (s, i) {
+    chart3.append('text')
+        .attr('fill', 'black')
+        .attr('x', width + margins.left + 8)
+        .attr('y', i * 24 + 24)
+        .text(s);
+    chart3.append('rect')
+        .attr('fill', colours(i))
+        .attr('width', 60)
+        .attr('height', 20)
+        .attr('x', width + margins.left + 90)
+        .attr('y', i * 24 + 6);
+});
+
+});  
+		};
+	rowChart(datasets[0]+"n");
+	rowChartSt(datasets[0]);  
+    
+	var datasetpicker1 = d3.select("#dataset-picker1").selectAll(".dataset-button1")
+        .data(datasets.slice(0,20))
 	  
       datasetpicker1.enter()
         .append("input")
@@ -158,11 +472,14 @@
         .attr("type", "button")
         .attr("class", "dataset-button1")
         .on("click", function(d) {
-          heatmapChart(d+".txt");	 
+          heatmapChart(d);	
+		  rowChart(d+"n");
+		  rowChartSt(d);
         });
 		
 		var datasetpicker2 = d3.select("#dataset-picker2").selectAll(".dataset-button2")
-        .data(datasets.slice(0,14));
+        .data(datasets.slice(20,39));
+		
 	  
       datasetpicker2.enter()
         .append("input")
@@ -170,10 +487,12 @@
         .attr("type", "button")
         .attr("class", "dataset-button2")
         .on("click", function(d) {
-          heatmapChart(d+".txt");	 
+          heatmapChart(d);	
+		  rowChart(d+"n");	
+		  rowChartSt(d);		  
         });
     </script>
-	<p>Legend:
+<p>Legend:
 <table>
   <tr>
     <td>B1</td>
@@ -224,6 +543,6 @@
     <td>Benchmark: Service-Tech Promised in Expected Timeframe</td>
 
 
-</table>
+</table> 
   </body>
 </html>
